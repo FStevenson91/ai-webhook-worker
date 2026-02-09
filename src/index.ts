@@ -46,8 +46,7 @@ export default {
         const token = url.searchParams.get('hub.verify_token');
         const challenge = url.searchParams.get('hub.challenge');
         
-        // En producción este token debe venir desde env.VERIFY_TOKEN
-        // para evitar exponer secretos en el código
+       // TODO: mover a env.VERIFY_TOKEN
         if (token === 'mi_token_secreto') {
           return new Response(challenge || 'OK', { headers: corsHeaders });
         }
