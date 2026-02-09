@@ -1,23 +1,14 @@
 /**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
+ * Cloudflare Worker que actúa como webhook receiver
+ * y forwardea eventos a un agente de IA alojado en Azure.
  */
 
-// export default {
-// 	async fetch(request, env, ctx): Promise<Response> {
-// 		return new Response('Hello World!');
-// 	},
-// } satisfies ExportedHandler<Env>;
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
-// Función para reenviar a Azure (se ejecuta en background)
 async function forwardToAzure(data: unknown): Promise<void> {
   try {
     const response = await fetch('https://ai-agent-felipe.azurewebsites.net/api/agent/chat', {
@@ -40,28 +31,29 @@ export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     
-    // Health check
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
+    
     if (url.pathname === '/health') {
       return new Response(JSON.stringify({ status: 'ok', service: 'ai-webhook-worker' }), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
-    // Webhook endpoint
     if (url.pathname === '/webhook') {
-      // GET = verificación (Meta/WhatsApp envía esto primero)
       if (request.method === 'GET') {
         const token = url.searchParams.get('hub.verify_token');
         const challenge = url.searchParams.get('hub.challenge');
         
-        // Token de verificación (en producción usa env.VERIFY_TOKEN)
+        // En producción este token debe venir desde env.VERIFY_TOKEN
+        // para evitar exponer secretos en el código
         if (token === 'mi_token_secreto') {
-          return new Response(challenge || 'OK');
+          return new Response(challenge || 'OK', { headers: corsHeaders });
         }
-        return new Response('Token inválido', { status: 403 });
+        return new Response('Token inválido', { status: 403, headers: corsHeaders });
       }
 
-      // POST = mensaje entrante
       if (request.method === 'POST') {
         try {
           const body = await request.json();
@@ -77,18 +69,17 @@ export default {
             received: true, 
             timestamp: new Date().toISOString()
           }), {
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
           });
         } catch (error) {
           return new Response(JSON.stringify({ error: 'JSON inválido' }), { 
             status: 400,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
           });
         }
       }
     }
 
-    // Ruta no encontrada
-    return new Response('Not Found', { status: 404 });
+    return new Response('Not Found', { status: 404, headers: corsHeaders });
   },
 } satisfies ExportedHandler<Env>;

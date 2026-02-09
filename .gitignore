@@ -8,6 +8,27 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
+# TS
+
+index.comentado.ts
+
+# MD
+NOTES.md
+Explicacion.proyecto.md
+index.comentado.md
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
