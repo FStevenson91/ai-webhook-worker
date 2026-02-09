@@ -9,13 +9,11 @@ lerna-debug.log*
 .pnpm-debug.log*
 
 # TS
-
-index.comentado.ts
+index2.ts
 
 # MD
 NOTES.md
 Explicacion.proyecto.md
-index.comentado.md
 
 # Environment variables
 .env
